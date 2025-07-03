@@ -91,6 +91,7 @@ def load_whisper_model():
     if model is None:
         logger.info("Loading Faster-Whisper model (small)...")
         try:
+            logger.info("Downloading Faster-Whisper model (this may take a few minutes on first run)...")
             model = WhisperModel("small", device="cpu", compute_type="int8")
             logger.info("Faster-Whisper model loaded successfully")
         except Exception as e:
@@ -428,8 +429,17 @@ if __name__ == "__main__":
     print("\n🎬 Video Text Extractor Server")
     print("=" * 30)
     print("✅ Server starting on http://localhost:8000")
-    print("✅ Open standalone_complete.html in your browser")
+    print("✅ Open index.html in your browser")
     print("✅ Press Ctrl+C to stop")
     print()
+    
+    # Preload model at startup to avoid timeout during first request
+    logger.info("Preloading Faster-Whisper model...")
+    try:
+        load_whisper_model()
+        print("✅ Model preloaded successfully")
+    except Exception as e:
+        print(f"❌ Failed to preload model: {e}")
+        print("Model will be loaded on first transcription request")
     
     uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")

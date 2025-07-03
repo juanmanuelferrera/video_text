@@ -301,6 +301,7 @@
             <div class="server-instructions">
                 <h3>🚀 Quick Start</h3>
                 <p><strong>To enable video transcription, start the Python server:</strong></p>
+                <div class="command">source venv/bin/activate</div>
                 <div class="command">python3 server.py</div>
             </div>
             
@@ -376,10 +377,15 @@
             statusText.textContent = 'Checking...';
             
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                
                 const response = await fetch(`${backendUrl}/health`, { 
                     method: 'GET',
-                    signal: AbortSignal.timeout(3000)
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 
                 if (response.ok) {
                     serverConnected = true;
@@ -417,12 +423,17 @@
             try {
                 if (serverConnected) {
                     // Try real backend
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes
+                    
                     const response = await fetch(`${backendUrl}/extract-text`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ video_url: url }),
-                        signal: AbortSignal.timeout(300000) // 5 minutes
+                        signal: controller.signal
                     });
+                    
+                    clearTimeout(timeoutId);
                     
                     if (response.ok) {
                         const data = await response.json();
@@ -684,6 +695,8 @@ The best part? It's completely free and open-source! No cloud dependencies, no s
         
         // Event listeners
         document.addEventListener('DOMContentLoaded', () => {
+            // Hide demo mode initially until server check completes
+            document.getElementById('demo-mode').style.display = 'none';
             checkServerStatus();
             
             document.getElementById('extract-btn').addEventListener('click', extractText);
