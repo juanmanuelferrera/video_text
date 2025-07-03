@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Text Extractor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .sidebar-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .clear-btn, .restart-btn, .stop-job-btn {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background-color 0.2s;
+            color: white;
+            font-weight: 500;
+        }
+
+        .clear-btn {
+            background: #e74c3c;
+        }
+
+        .clear-btn:hover {
+            background: #c0392b;
+        }
+
+        .restart-btn {
+            background: #f39c12;
+        }
+
+        .restart-btn:hover {
+            background: #e67e22;
+        }
+
+        .stop-job-btn {
+            background: #95a5a6;
+        }
+
+        .stop-job-btn:hover {
+            background: #7f8c8d;
+        }
+
+        .stop-job-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .transcription-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .transcription-item {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-left: 4px solid #3498db;
+        }
+
+        .transcription-item:hover {
+            background: #3d566e;
+        }
+
+        .transcription-item.active {
+            background: #3498db;
+            border-left-color: #2980b9;
+        }
+
+        .transcription-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .transcription-meta {
+            font-size: 0.75rem;
+            color: #bdc3c7;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .transcription-preview {
+            font-size: 0.8rem;
+            color: #ecf0f1;
+            margin-top: 8px;
+            line-height: 1.4;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .input-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        #video-url {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        #video-url:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .extract-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+
+        .extract-btn:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .extract-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .language-info {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        /* Loading Section */
+        .loading-section {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e0e6ed;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e6ed;
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Result Section */
+        .result-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .result-header {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-header h3 {
+            color: #2c3e50;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .copy-btn, .save-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .copy-btn {
+            background: #27ae60;
+            color: white;
+        }
+
+        .copy-btn:hover {
+            background: #229954;
+        }
+
+        .copy-btn.copied {
+            background: #2ecc71;
+        }
+
+        .save-btn {
+            background: #f39c12;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: #e67e22;
+        }
+
+        .text-output {
+            padding: 30px;
+            font-size: 1rem;
+            line-height: 1.8;
+            color: #2c3e50;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .metadata {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 200px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .result-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .metadata {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        /* Success animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-section {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">
+                    <h2>Transcriptions</h2>
+                </div>
+                <div class="sidebar-actions">
+                    <button id="clear-history" class="clear-btn">Clear All</button>
+                    <button id="stop-job" class="stop-job-btn" disabled>Stop Job</button>
+                    <button id="restart-server" class="restart-btn">Restart Server</button>
+                </div>
+            </div>
+            <div id="transcription-list" class="transcription-list">
+                <!-- Stored transcriptions will appear here -->
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="header">
+                <h1>Video Text Extractor</h1>
+                <p>Extract text from video URLs using AI-powered speech recognition</p>
+            </div>
+            
+            <div class="input-section">
+                <div class="input-group">
+                    <input type="url" id="video-url" placeholder="Paste your video URL here (YouTube, etc.)" required>
+                    <button id="extract-btn" class="extract-btn">Extract Text</button>
+                </div>
+                <div class="language-info">
+                    <span id="detected-language">Language will be auto-detected</span>
+                </div>
+            </div>
+            
+            <div class="loading-section" id="loading-section" style="display: none;">
+                <div class="spinner"></div>
+                <div class="loading-text">
+                    <div id="loading-status">Processing video...</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-section" id="result-section" style="display: none;">
+                <div class="result-header">
+                    <h3>Extracted Text</h3>
+                    <div class="result-actions">
+                        <button id="copy-btn" class="copy-btn">📋 Copy Text</button>
+                        <button id="save-btn" class="save-btn">💾 Save</button>
+                    </div>
+                </div>
+                <div class="text-output" id="text-output">
+                    <!-- Extracted text will appear here -->
+                </div>
+                <div class="metadata">
+                    <span id="video-title"></span>
+                    <span id="extraction-time"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        class VideoTextExtractor {
+            constructor() {
+                this.initializeElements();
+                this.bindEvents();
+                this.loadStoredTranscriptions();
+            }
+
+            initializeElements() {
+                this.videoUrlInput = document.getElementById('video-url');
+                this.extractBtn = document.getElementById('extract-btn');
+                this.loadingSection = document.getElementById('loading-section');
+                this.resultSection = document.getElementById('result-section');
+                this.textOutput = document.getElementById('text-output');
+                this.copyBtn = document.getElementById('copy-btn');
+                this.saveBtn = document.getElementById('save-btn');
+                this.transcriptionList = document.getElementById('transcription-list');
+                this.clearHistoryBtn = document.getElementById('clear-history');
+                this.stopJobBtn = document.getElementById('stop-job');
+                this.restartServerBtn = document.getElementById('restart-server');
+                this.detectedLanguage = document.getElementById('detected-language');
+                this.videoTitle = document.getElementById('video-title');
+                this.extractionTime = document.getElementById('extraction-time');
+                this.loadingStatus = document.getElementById('loading-status');
+                this.progressFill = document.getElementById('progress-fill');
+                this.currentJobController = null;
+            }
+
+            bindEvents() {
+                this.extractBtn.addEventListener('click', () => this.extractText());
+                this.copyBtn.addEventListener('click', () => this.copyText());
+                this.saveBtn.addEventListener('click', () => this.saveTranscription());
+                this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
+                this.stopJobBtn.addEventListener('click', () => this.stopCurrentJob());
+                this.restartServerBtn.addEventListener('click', () => this.restartServer());
+                
+                this.videoUrlInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.extractText();
+                    }
+                });
+
+                this.videoUrlInput.addEventListener('input', () => {
+                    this.validateUrl();
+                });
+            }
+
+            validateUrl() {
+                const url = this.videoUrlInput.value.trim();
+                const isValid = this.isValidVideoUrl(url);
+                this.extractBtn.disabled = !isValid || !url;
+                
+                if (url && !isValid) {
+                    this.videoUrlInput.style.borderColor = '#e74c3c';
+                } else {
+                    this.videoUrlInput.style.borderColor = '#e0e6ed';
+                }
+            }
+
+            isValidVideoUrl(url) {
+                try {
+                    const urlObj = new URL(url);
+                    const validDomains = [
+                        'youtube.com', 'youtu.be', 'vimeo.com', 'dailymotion.com',
+                        'twitch.tv', 'facebook.com', 'instagram.com', 'tiktok.com'
+                    ];
+                    return validDomains.some(domain => 
+                        urlObj.hostname.includes(domain) || urlObj.hostname.endsWith(domain)
+                    );
+                } catch {
+                    return false;
+                }
+            }
+
+            async extractText() {
+                const url = this.videoUrlInput.value.trim();
+                if (!url || !this.isValidVideoUrl(url)) {
+                    alert('Please enter a valid video URL');
+                    return;
+                }
+
+                this.showLoading();
+                this.extractBtn.disabled = true;
+                this.stopJobBtn.disabled = false;
+                this.currentJobController = new AbortController();
+
+                try {
+                    const response = await this.callBackendAPI(url);
+                    this.displayResult(response);
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        this.handleJobCancellation();
+                    } else {
+                        this.handleError(error);
+                    }
+                } finally {
+                    this.hideLoading();
+                    this.extractBtn.disabled = false;
+                    this.stopJobBtn.disabled = true;
+                    this.currentJobController = null;
+                }
+            }
+
+            async callBackendAPI(url) {
+                const response = await fetch('http://localhost:8000/extract-text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ video_url: url }),
+                    signal: this.currentJobController ? this.currentJobController.signal : undefined
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return await response.json();
+            }
+
+            showLoading() {
+                this.loadingSection.style.display = 'block';
+                this.resultSection.style.display = 'none';
+                this.simulateProgress();
+            }
+
+            hideLoading() {
+                this.loadingSection.style.display = 'none';
+                this.progressFill.style.width = '0%';
+            }
+
+            simulateProgress() {
+                let progress = 0;
+                const statuses = [
+                    'Downloading video...',
+                    'Extracting audio...',
+                    'Processing with faster-whisper...',
+                    'Detecting language...',
+                    'Generating transcription...',
+                    'Finalizing...'
+                ];
+                
+                const interval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    
+                    this.progressFill.style.width = `${progress}%`;
+                    
+                    const statusIndex = Math.floor((progress / 100) * statuses.length);
+                    if (statusIndex < statuses.length) {
+                        this.loadingStatus.textContent = statuses[statusIndex];
+                    }
+                }, 800);
+
+                setTimeout(() => {
+                    clearInterval(interval);
+                    this.progressFill.style.width = '100%';
+                }, 10000);
+            }
+
+            displayResult(data) {
+                this.textOutput.textContent = data.text || 'No text could be extracted from this video.';
+                this.detectedLanguage.textContent = `Detected language: ${data.language || 'Unknown'}`;
+                this.videoTitle.textContent = data.title || 'Unknown Title';
+                this.extractionTime.textContent = new Date().toLocaleString();
+                
+                this.resultSection.style.display = 'block';
+                this.resultSection.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            async copyText() {
+                try {
+                    await navigator.clipboard.writeText(this.textOutput.textContent);
+                    
+                    const originalText = this.copyBtn.textContent;
+                    this.copyBtn.textContent = '✅ Copied!';
+                    this.copyBtn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        this.copyBtn.textContent = originalText;
+                        this.copyBtn.classList.remove('copied');
+                    }, 2000);
+                } catch (error) {
+                    this.fallbackCopyText();
+                }
+            }
+
+            fallbackCopyText() {
+                const textArea = document.createElement('textarea');
+                textArea.value = this.textOutput.textContent;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                this.copyBtn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    this.copyBtn.textContent = '📋 Copy Text';
+                }, 2000);
+            }
+
+            saveTranscription() {
+                const transcription = {
+                    id: Date.now().toString(),
+                    url: this.videoUrlInput.value,
+                    title: this.videoTitle.textContent,
+                    text: this.textOutput.textContent,
+                    language: this.detectedLanguage.textContent,
+                    timestamp: new Date().toISOString(),
+                    preview: this.textOutput.textContent.substring(0, 100) + '...'
+                };
+
+                this.addToStorage(transcription);
+                this.renderTranscriptionList();
+                
+                this.saveBtn.textContent = '✅ Saved!';
+                setTimeout(() => {
+                    this.saveBtn.textContent = '💾 Save';
+                }, 2000);
+            }
+
+            addToStorage(transcription) {
+                const stored = JSON.parse(localStorage.getItem('transcriptions') || '[]');
+                stored.unshift(transcription);
+                
+                if (stored.length > 50) {
+                    stored.splice(50);
+                }
+                
+                localStorage.setItem('transcriptions', JSON.stringify(stored));
+            }
+
+            loadStoredTranscriptions() {
+                this.renderTranscriptionList();
+            }
+
+            renderTranscriptionList() {
+                const stored = JSON.parse(localStorage.getItem('transcriptions') || '[]');
+                
+                if (stored.length === 0) {
+                    this.transcriptionList.innerHTML = '<div class="empty-state">No transcriptions yet</div>';
+                    return;
+                }
+
+                this.transcriptionList.innerHTML = stored.map(item => `
+                    <div class="transcription-item" data-id="${item.id}">
+                        <div class="transcription-title">${this.escapeHtml(item.title)}</div>
+                        <div class="transcription-meta">
+                            <span>${item.language}</span>
+                            <span>${new Date(item.timestamp).toLocaleDateString()}</span>
+                        </div>
+                        <div class="transcription-preview">${this.escapeHtml(item.preview)}</div>
+                    </div>
+                `).join('');
+
+                this.transcriptionList.addEventListener('click', (e) => {
+                    const item = e.target.closest('.transcription-item');
+                    if (item) {
+                        this.loadTranscription(item.dataset.id);
+                    }
+                });
+            }
+
+            loadTranscription(id) {
+                const stored = JSON.parse(localStorage.getItem('transcriptions') || '[]');
+                const transcription = stored.find(item => item.id === id);
+                
+                if (transcription) {
+                    this.videoUrlInput.value = transcription.url;
+                    this.textOutput.textContent = transcription.text;
+                    this.detectedLanguage.textContent = transcription.language;
+                    this.videoTitle.textContent = transcription.title;
+                    this.extractionTime.textContent = new Date(transcription.timestamp).toLocaleString();
+                    
+                    this.resultSection.style.display = 'block';
+                    
+                    document.querySelectorAll('.transcription-item').forEach(el => 
+                        el.classList.remove('active')
+                    );
+                    document.querySelector(`[data-id="${id}"]`).classList.add('active');
+                }
+            }
+
+            clearHistory() {
+                if (confirm('Are you sure you want to clear all transcription history?')) {
+                    localStorage.removeItem('transcriptions');
+                    this.renderTranscriptionList();
+                }
+            }
+
+            stopCurrentJob() {
+                if (this.currentJobController) {
+                    this.currentJobController.abort();
+                    this.stopJobBtn.textContent = '✅ Stopped';
+                    setTimeout(() => {
+                        this.stopJobBtn.textContent = 'Stop Job';
+                    }, 2000);
+                }
+            }
+
+            handleJobCancellation() {
+                this.textOutput.textContent = 'Job was cancelled by user';
+                this.detectedLanguage.textContent = 'Job cancelled';
+                this.videoTitle.textContent = 'Cancelled';
+                this.extractionTime.textContent = new Date().toLocaleString();
+                this.resultSection.style.display = 'block';
+            }
+
+            async restartServer() {
+                if (confirm('This will restart the server. Continue?')) {
+                    this.restartServerBtn.disabled = true;
+                    this.restartServerBtn.textContent = 'Restarting...';
+                    
+                    try {
+                        // Set a timeout for the request since server will shutdown
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 3000);
+                        
+                        const response = await fetch('http://localhost:8000/restart', {
+                            method: 'POST',
+                            signal: controller.signal
+                        });
+                        
+                        clearTimeout(timeoutId);
+                        
+                        // Server should shutdown, so any response is success
+                        this.restartServerBtn.textContent = 'Restarting...';
+                        await this.waitForServerRestart();
+                        
+                    } catch (error) {
+                        // If fetch fails due to timeout or connection error, it likely means server shut down
+                        if (error.name === 'AbortError' || error.message.includes('fetch')) {
+                            this.restartServerBtn.textContent = 'Restarting...';
+                            await this.waitForServerRestart();
+                        } else {
+                            alert('Failed to restart server. Please check if you started the server with the restart wrapper script.');
+                            this.restartServerBtn.textContent = 'Restart Server';
+                            this.restartServerBtn.disabled = false;
+                        }
+                    }
+                }
+            }
+
+            async waitForServerRestart() {
+                const maxAttempts = 15;
+                let attempts = 0;
+                
+                const checkServer = async () => {
+                    try {
+                        const response = await fetch('http://localhost:8000/health', {
+                            method: 'GET',
+                            signal: AbortSignal.timeout(2000)
+                        });
+                        
+                        if (response.ok) {
+                            this.restartServerBtn.textContent = '✅ Restarted';
+                            setTimeout(() => {
+                                this.restartServerBtn.textContent = 'Restart Server';
+                                this.restartServerBtn.disabled = false;
+                            }, 2000);
+                            return true;
+                        }
+                    } catch (error) {
+                        // Server not ready yet
+                    }
+                    return false;
+                };
+                
+                while (attempts < maxAttempts) {
+                    attempts++;
+                    this.restartServerBtn.textContent = `Restarting... (${attempts}/${maxAttempts})`;
+                    
+                    if (await checkServer()) {
+                        return;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+                
+                // If we get here, server didn't come back up
+                this.restartServerBtn.textContent = 'Restart Failed';
+                alert('Server restart timed out. Please check your terminal and restart manually if needed.');
+                setTimeout(() => {
+                    this.restartServerBtn.textContent = 'Restart Server';
+                    this.restartServerBtn.disabled = false;
+                }, 3000);
+            }
+
+            handleError(error) {
+                console.error('Error extracting text:', error);
+                
+                let errorMessage = 'Failed to extract text from video. ';
+                if (error.message.includes('404')) {
+                    errorMessage += 'Video not found or not accessible.';
+                } else if (error.message.includes('network')) {
+                    errorMessage += 'Network error. Please check your connection.';
+                } else {
+                    errorMessage += 'Please try again or check if the video URL is valid.';
+                }
+                
+                this.textOutput.textContent = errorMessage;
+                this.detectedLanguage.textContent = 'Error occurred';
+                this.videoTitle.textContent = 'Error';
+                this.extractionTime.textContent = new Date().toLocaleString();
+                
+                this.resultSection.style.display = 'block';
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new VideoTextExtractor();
+        });
+    </script>
+</body>
+</html>

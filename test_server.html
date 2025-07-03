@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Server Test</title>
+</head>
+<body>
+    <h1>Testing Server Connection</h1>
+    <button onclick="testServer()">Test Server</button>
+    <div id="result"></div>
+    
+    <script>
+    async function testServer() {
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = 'Testing...';
+        
+        try {
+            const response = await fetch('http://localhost:8000/health');
+            const data = await response.json();
+            resultDiv.innerHTML = `<p style="color: green;">✅ Server is working!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } catch (error) {
+            resultDiv.innerHTML = `<p style="color: red;">❌ Server error: ${error.message}</p>`;
+        }
+    }
+    
+    // Auto-test on load
+    window.onload = testServer;
+    </script>
+</body>
+</html>

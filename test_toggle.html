@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Toggle Button</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result-section { 
+            background: white; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            margin: 20px 0; 
+            padding: 20px;
+        }
+        .result-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px;
+        }
+        .result-actions { display: flex; gap: 10px; }
+        button { 
+            padding: 8px 16px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 500;
+        }
+        .format-btn { background: #9b59b6; color: white; }
+        .format-btn.active { background: #e74c3c; }
+        .copy-btn { background: #27ae60; color: white; }
+        .save-btn { background: #f39c12; color: white; }
+        .text-output { 
+            background: #f8f9fa; 
+            padding: 20px; 
+            border-radius: 6px; 
+            white-space: pre-wrap;
+            min-height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Toggle Button Test</h1>
+    <p>This shows the toggle button and tests its functionality:</p>
+    
+    <div class="result-section">
+        <div class="result-header">
+            <h3 id="result-title">📄 Extracted Text</h3>
+            <div class="result-actions">
+                <button id="toggle-format" class="format-btn">⏱️ With Timing</button>
+                <button id="copy-btn" class="copy-btn">📋 Copy Text</button>
+                <button id="save-btn" class="save-btn">💾 Save</button>
+                <button id="download-vtt-btn" class="save-btn" style="display: none;">📥 Download VTT</button>
+            </div>
+        </div>
+        <div class="text-output" id="text-output">
+# Sample Video Title
+
+**Language:** English
+**Source:** https://www.youtube.com/watch?v=example
+
+---
+
+This is a sample transcription to test the toggle functionality. You should see the toggle button above.
+
+This is a second paragraph to demonstrate the clean formatting.
+        </div>
+    </div>
+    
+    <script>
+        const mockResult = {
+            text: `# Sample Video Title
+
+**Language:** English
+**Source:** https://www.youtube.com/watch?v=example
+
+---
+
+This is a sample transcription to test the toggle functionality. You should see the toggle button above.
+
+This is a second paragraph to demonstrate the clean formatting.`,
+            text_with_timing: `# Sample Video Title
+
+**Language:** English
+**Source:** https://www.youtube.com/watch?v=example
+**Duration:** 02:30
+
+---
+
+[00:00 --> 00:08]
+This is a sample transcription to test the toggle functionality.
+
+[00:08 --> 00:15]
+You should see the toggle button above.
+
+[00:15 --> 00:22]
+This is a second paragraph to demonstrate the timing formatting.`
+        };
+        
+        let showingTiming = false;
+        
+        document.getElementById('toggle-format').addEventListener('click', function() {
+            const textOutput = document.getElementById('text-output');
+            const toggleBtn = document.getElementById('toggle-format');
+            const resultTitle = document.getElementById('result-title');
+            const downloadBtn = document.getElementById('download-vtt-btn');
+            
+            showingTiming = !showingTiming;
+            
+            if (showingTiming) {
+                textOutput.textContent = mockResult.text_with_timing;
+                resultTitle.textContent = '⏱️ With Timing (VTT Style)';
+                toggleBtn.textContent = '📄 Clean Version';
+                toggleBtn.classList.add('active');
+                downloadBtn.style.display = 'inline-block';
+            } else {
+                textOutput.textContent = mockResult.text;
+                resultTitle.textContent = '📄 Extracted Text';
+                toggleBtn.textContent = '⏱️ With Timing';
+                toggleBtn.classList.remove('active');
+                downloadBtn.style.display = 'none';
+            }
+        });
+        
+        document.getElementById('copy-btn').addEventListener('click', function() {
+            const text = document.getElementById('text-output').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                this.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    this.textContent = '📋 Copy Text';
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>

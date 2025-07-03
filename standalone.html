@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Text Extractor - Standalone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .clear-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background-color 0.2s;
+        }
+
+        .clear-btn:hover {
+            background: #c0392b;
+        }
+
+        .transcription-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .transcription-item {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-left: 4px solid #3498db;
+        }
+
+        .transcription-item:hover {
+            background: #3d566e;
+        }
+
+        .transcription-item.active {
+            background: #3498db;
+            border-left-color: #2980b9;
+        }
+
+        .transcription-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .transcription-meta {
+            font-size: 0.75rem;
+            color: #bdc3c7;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .transcription-preview {
+            font-size: 0.8rem;
+            color: #ecf0f1;
+            margin-top: 8px;
+            line-height: 1.4;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .input-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        #video-url {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        #video-url:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .extract-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+
+        .extract-btn:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .extract-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .language-info {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .loading-section {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e0e6ed;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e6ed;
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .result-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .result-header {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-header h3 {
+            color: #2c3e50;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .copy-btn, .save-btn, .format-btn, .toggle-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .copy-btn {
+            background: #27ae60;
+            color: white;
+        }
+
+        .copy-btn:hover {
+            background: #229954;
+        }
+
+        .copy-btn.copied {
+            background: #2ecc71;
+        }
+
+        .save-btn {
+            background: #f39c12;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: #e67e22;
+        }
+
+        .format-btn {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .format-btn:hover {
+            background: #8e44ad;
+        }
+
+        .format-btn.active {
+            background: #e74c3c;
+        }
+
+        .format-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .toggle-btn {
+            background: #3498db;
+            color: white;
+        }
+
+        .toggle-btn:hover {
+            background: #2980b9;
+        }
+
+        .toggle-btn.active {
+            background: #2c3e50;
+        }
+
+        .toggle-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .text-output {
+            padding: 30px;
+            font-size: 1rem;
+            line-height: 1.8;
+            color: #2c3e50;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .text-output h1 {
+            color: #2c3e50;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+
+        .text-output strong {
+            color: #34495e;
+        }
+
+        .text-output hr {
+            border: none;
+            border-top: 1px solid #bdc3c7;
+            margin: 20px 0;
+        }
+
+        .text-output em {
+            color: #7f8c8d;
+            font-style: italic;
+        }
+
+        .metadata {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .demo-note {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+
+        .demo-note strong {
+            color: #b45309;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 200px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .result-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .metadata {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-section {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .api-info {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #0c5460;
+        }
+
+        .api-info code {
+            background: #bee5eb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Transcriptions</h2>
+                <button id="clear-history" class="clear-btn">Clear All</button>
+            </div>
+            <div id="transcription-list" class="transcription-list">
+                <!-- Stored transcriptions will appear here -->
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="header">
+                <h1>Video Text Extractor</h1>
+                <p>Extract text from video URLs using AI-powered speech recognition</p>
+            </div>
+
+            <div class="api-info">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <strong>🚀 Server Status</strong>
+                    <div id="server-status" style="display: flex; align-items: center; gap: 8px;">
+                        <span id="status-indicator" style="width: 12px; height: 12px; border-radius: 50%; background: #e74c3c;"></span>
+                        <span id="status-text">Disconnected</span>
+                        <button id="check-server" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">Check</button>
+                    </div>
+                </div>
+                <strong>🎯 Quick Start:</strong> To use real video transcription, start the Python server:
+                <br><br>
+                <div style="background: #34495e; color: white; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0;">
+                    python3 start.py
+                </div>
+                <div style="font-size: 0.9rem; color: #0c5460;">
+                    💡 The start.py script automatically activates the virtual environment and starts the server on <code>http://localhost:8000</code>
+                </div>
+            </div>
+            
+            <div class="demo-note">
+                <strong>📋 Standalone Demo Mode:</strong> This version works without the Python backend and shows simulated transcription results for demonstration purposes. For real video transcription, use with the FastAPI backend.
+            </div>
+            
+            <div class="input-section">
+                <div class="input-group">
+                    <input type="url" id="video-url" placeholder="Paste your video URL here (YouTube, etc.)" required>
+                    <button id="extract-btn" class="extract-btn">Extract Text</button>
+                </div>
+                <div class="language-info">
+                    <span id="detected-language">Language will be auto-detected</span>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button id="toggle-format-preview" class="toggle-btn" style="display: none;">⏱️ Toggle Timing View</button>
+                </div>
+            </div>
+            
+            <div class="loading-section" id="loading-section" style="display: none;">
+                <div class="spinner"></div>
+                <div class="loading-text">
+                    <div id="loading-status">Processing video...</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-section" id="result-section" style="display: none;">
+                <div class="result-header">
+                    <h3 id="result-title">📄 Extracted Text</h3>
+                    <div class="result-actions">
+                        <button id="copy-btn" class="copy-btn">📋 Copy Text</button>
+                        <button id="save-btn" class="save-btn">💾 Save</button>
+                        <button id="toggle-format" class="toggle-btn">⏱️ Toggle Timing</button>
+                        <button id="download-vtt-btn" class="save-btn" style="display: none;">📥 Download VTT</button>
+                    </div>
+                </div>
+                <div class="text-output" id="text-output">
+                    <!-- Extracted text will appear here -->
+                </div>
+                <div class="metadata">
+                    <span id="video-title"></span>
+                    <span id="extraction-time"></span>
+                </div>
+            </div>
+            
+            <div class="result-section" id="summary-section" style="display: none;">
+                <div class="result-header">
+                    <h3>📝 AI Summary</h3>
+                    <div class="result-actions">
+                        <button id="copy-summary-btn" class="copy-btn">📋 Copy Summary</button>
+                    </div>
+                </div>
+                <div class="text-output" id="summary-output">
+                    <!-- AI summary will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        class VideoTextExtractor {
+            constructor() {
+                this.initializeElements();
+                this.bindEvents();
+                this.loadStoredTranscriptions();
+                this.backendUrl = 'http://localhost:8000';
+                this.currentResult = null;
+                this.showingTiming = false;
+            }
+
+            initializeElements() {
+                this.videoUrlInput = document.getElementById('video-url');
+                this.extractBtn = document.getElementById('extract-btn');
+                this.loadingSection = document.getElementById('loading-section');
+                this.resultSection = document.getElementById('result-section');
+                this.textOutput = document.getElementById('text-output');
+                this.copyBtn = document.getElementById('copy-btn');
+                this.saveBtn = document.getElementById('save-btn');
+                this.toggleFormatBtn = document.getElementById('toggle-format');
+                this.downloadVttBtn = document.getElementById('download-vtt-btn');
+                this.resultTitle = document.getElementById('result-title');
+                this.transcriptionList = document.getElementById('transcription-list');
+                this.clearHistoryBtn = document.getElementById('clear-history');
+                this.detectedLanguage = document.getElementById('detected-language');
+                this.videoTitle = document.getElementById('video-title');
+                this.extractionTime = document.getElementById('extraction-time');
+                this.loadingStatus = document.getElementById('loading-status');
+                this.progressFill = document.getElementById('progress-fill');
+                this.summarySection = document.getElementById('summary-section');
+                this.summaryOutput = document.getElementById('summary-output');
+                this.copySummaryBtn = document.getElementById('copy-summary-btn');
+                this.statusIndicator = document.getElementById('status-indicator');
+                this.statusText = document.getElementById('status-text');
+                this.checkServerBtn = document.getElementById('check-server');
+            }
+
+            bindEvents() {
+                this.extractBtn.addEventListener('click', () => this.extractText());
+                this.copyBtn.addEventListener('click', () => this.copyText());
+                this.saveBtn.addEventListener('click', () => this.saveTranscription());
+                this.toggleFormatBtn.addEventListener('click', () => this.toggleFormat());
+                this.downloadVttBtn.addEventListener('click', () => this.downloadVTT());
+                this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
+                this.copySummaryBtn.addEventListener('click', () => this.copySummary());
+                this.checkServerBtn.addEventListener('click', () => this.checkServerStatus());
+                
+                this.videoUrlInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.extractText();
+                    }
+                });
+
+                this.videoUrlInput.addEventListener('input', () => {
+                    this.validateUrl();
+                });
+
+                // Check server status on load
+                this.checkServerStatus();
+            }
+
+            validateUrl() {
+                const url = this.videoUrlInput.value.trim();
+                const isValid = this.isValidVideoUrl(url);
+                this.extractBtn.disabled = !isValid || !url;
+                
+                if (url && !isValid) {
+                    this.videoUrlInput.style.borderColor = '#e74c3c';
+                } else {
+                    this.videoUrlInput.style.borderColor = '#e0e6ed';
+                }
+            }
+
+            isValidVideoUrl(url) {
+                try {
+                    const urlObj = new URL(url);
+                    const validDomains = [
+                        'youtube.com', 'youtu.be', 'vimeo.com', 'dailymotion.com',
+                        'twitch.tv', 'facebook.com', 'instagram.com', 'tiktok.com'
+                    ];
+                    return validDomains.some(domain => 
+                        urlObj.hostname.includes(domain) || urlObj.hostname.endsWith(domain)
+                    );
+                } catch {
+                    return false;
+                }
+            }
+
+            async extractText() {
+                const url = this.videoUrlInput.value.trim();
+                if (!url || !this.isValidVideoUrl(url)) {
+                    alert('Please enter a valid video URL');
+                    return;
+                }
+
+                this.showLoading();
+                this.extractBtn.disabled = true;
+
+                try {
+                    // Try real backend first
+                    const response = await this.callBackendAPI(url);
+                    this.displayResult(response);
+                } catch (error) {
+                    console.log('Backend not available, using demo mode');
+                    // Fallback to demo mode
+                    await this.simulateExtraction(url);
+                } finally {
+                    this.hideLoading();
+                    this.extractBtn.disabled = false;
+                }
+            }
+
+            async callBackendAPI(url) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+                try {
+                    // First test if the URL is valid
+                    console.log('Testing URL validity...');
+                    const testResponse = await fetch(`${this.backendUrl}/test-extract`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ video_url: url }),
+                        signal: controller.signal
+                    });
+
+                    if (testResponse.ok) {
+                        const testResult = await testResponse.json();
+                        console.log('Test result:', testResult);
+                        
+                        if (testResult.status === 'error') {
+                            throw new Error(`Video validation failed: ${testResult.error}`);
+                        }
+                    }
+
+                    // Now try the actual extraction
+                    console.log('Starting extraction...');
+                    const response = await fetch(`${this.backendUrl}/extract-text`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ video_url: url }),
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('API Error:', errorText);
+                        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                    }
+
+                    const result = await response.json();
+                    console.log('Extraction result:', result);
+                    return result;
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    console.error('Backend API error:', error);
+                    throw error;
+                }
+            }
+
+            async simulateExtraction(url) {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        // Extract video title from URL for demo
+                        let title = 'Demo Video - AI Technology Overview';
+                        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                            title = 'Understanding Artificial Intelligence and Machine Learning';
+                        } else if (url.includes('vimeo.com')) {
+                            title = 'The Future of Technology and Innovation';
+                        }
+
+                        // Generate demo transcription with formatting
+                        const demoTexts = [
+                            this.formatDemoText(
+                                "Welcome to this amazing video! In today's episode, we'll be exploring the fascinating world of technology and innovation. This is a demonstration of our video text extraction system using advanced AI speech recognition. We'll cover how machine learning algorithms can process audio data and convert spoken words into accurate text transcriptions. The technology behind this involves neural networks trained on vast amounts of speech data. These systems can now recognize multiple languages and adapt to different accents and speaking styles.",
+                                title, url, 'English'
+                            ),
+                            this.formatDemoText(
+                                "Hola y bienvenidos a este increíble video. En el episodio de hoy, exploraremos el fascinante mundo de la tecnología y la innovación. Esta es una demostración de nuestro sistema de extracción de texto de video usando reconocimiento de voz AI avanzado. Cubriremos cómo los algoritmos de aprendizaje automático pueden procesar datos de audio y convertir palabras habladas en transcripciones de texto precisas. La tecnología detrás de esto involucra redes neuronales entrenadas en grandes cantidades de datos de voz.",
+                                'Introducción a la Inteligencia Artificial', url, 'Spanish'
+                            ),
+                            this.formatDemoText(
+                                "In this educational content, we dive deep into the subject matter with comprehensive analysis and detailed explanations. Our AI-powered transcription service accurately captures spoken words and converts them to text format. The service uses state-of-the-art machine learning models that have been trained on diverse datasets. This ensures high accuracy across different languages, accents, and audio qualities. The system can handle various video formats and automatically extracts the audio for processing.",
+                                'Educational AI Technology Tutorial', url, 'English'
+                            )
+                        ];
+
+                        const randomDemo = demoTexts[Math.floor(Math.random() * demoTexts.length)];
+                        
+                        const result = {
+                            text: randomDemo.text,
+                            language: randomDemo.language,
+                            title: randomDemo.title,
+                            duration: Math.floor(Math.random() * 300) + 60
+                        };
+
+                        this.displayResult(result);
+                        resolve(result);
+                    }, 3000);
+                });
+            }
+
+            formatDemoText(rawText, title, url, language) {
+                // Split into sentences
+                const sentences = rawText.split(/[.!?]+/).filter(s => s.trim());
+                
+                // Group into paragraphs
+                const paragraphs = [];
+                for (let i = 0; i < sentences.length; i += 2) {
+                    const paragraph = sentences.slice(i, i + 2).join('. ').trim() + '.';
+                    if (paragraph !== '.') {
+                        paragraphs.push(paragraph);
+                    }
+                }
+
+                // Clean version
+                const cleanText = `# ${title}
+
+**Language:** ${language}
+**Source:** ${url}
+
+---
+
+${paragraphs.join('\n\n')}`;
+
+                // Version with timing
+                const duration = 180; // 3 minutes demo
+                const timePerSentence = duration / sentences.length;
+                let timingText = `# ${title}
+
+**Language:** ${language}
+**Source:** ${url}
+**Duration:** 03:00
+
+---
+
+`;
+
+                let currentTime = 0;
+                sentences.forEach(sentence => {
+                    const startMin = Math.floor(currentTime / 60);
+                    const startSec = Math.floor(currentTime % 60);
+                    const endTime = currentTime + timePerSentence;
+                    const endMin = Math.floor(endTime / 60);
+                    const endSec = Math.floor(endTime % 60);
+                    
+                    timingText += `[${startMin.toString().padStart(2,'0')}:${startSec.toString().padStart(2,'0')} --> ${endMin.toString().padStart(2,'0')}:${endSec.toString().padStart(2,'0')}]\n`;
+                    timingText += `${sentence.trim()}.\n\n`;
+                    
+                    currentTime = endTime;
+                });
+
+                return { 
+                    text: cleanText, 
+                    text_with_timing: timingText,
+                    language, 
+                    title 
+                };
+            }
+
+            showLoading() {
+                this.loadingSection.style.display = 'block';
+                this.resultSection.style.display = 'none';
+                this.simulateProgress();
+            }
+
+            hideLoading() {
+                this.loadingSection.style.display = 'none';
+                this.progressFill.style.width = '0%';
+            }
+
+            simulateProgress() {
+                let progress = 0;
+                const statuses = [
+                    'Downloading video...',
+                    'Extracting audio...',
+                    'Processing with AI whisper...',
+                    'Detecting language...',
+                    'Generating transcription...',
+                    'Finalizing...'
+                ];
+                
+                const interval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    
+                    this.progressFill.style.width = `${progress}%`;
+                    
+                    const statusIndex = Math.floor((progress / 100) * statuses.length);
+                    if (statusIndex < statuses.length) {
+                        this.loadingStatus.textContent = statuses[statusIndex];
+                    }
+                }, 600);
+
+                setTimeout(() => {
+                    clearInterval(interval);
+                    this.progressFill.style.width = '100%';
+                }, 3000);
+            }
+
+            displayResult(data) {
+                this.currentResult = data;
+                this.showingTiming = false;
+                
+                // Display clean version by default
+                this.textOutput.textContent = data.text || 'No text could be extracted from this video.';
+                this.detectedLanguage.textContent = `Detected language: ${data.language || 'Unknown'}`;
+                this.videoTitle.textContent = data.title || 'Unknown Title';
+                this.extractionTime.textContent = new Date().toLocaleString();
+                
+                // Display summary if available
+                if (data.summary) {
+                    this.summaryOutput.textContent = data.summary;
+                    this.summarySection.style.display = 'block';
+                } else {
+                    this.summarySection.style.display = 'none';
+                }
+                
+                // Reset UI to clean version
+                this.resultTitle.textContent = '📄 Extracted Text';
+                this.toggleFormatBtn.textContent = '⏱️ With Timing';
+                this.toggleFormatBtn.classList.remove('active');
+                this.toggleFormatBtn.disabled = false; // Enable toggle for new extractions
+                this.downloadVttBtn.style.display = 'none';
+                
+                this.resultSection.style.display = 'block';
+                this.resultSection.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            toggleFormat() {
+                if (!this.currentResult) return;
+                
+                this.showingTiming = !this.showingTiming;
+                
+                if (this.showingTiming) {
+                    // Show timing version
+                    this.textOutput.textContent = this.currentResult.text_with_timing || this.currentResult.text;
+                    this.resultTitle.textContent = '⏱️ With Timing (VTT Style)';
+                    this.toggleFormatBtn.textContent = '📄 Clean Version';
+                    this.toggleFormatBtn.classList.add('active');
+                    this.downloadVttBtn.style.display = 'inline-block';
+                } else {
+                    // Show clean version
+                    this.textOutput.textContent = this.currentResult.text;
+                    this.resultTitle.textContent = '📄 Extracted Text';
+                    this.toggleFormatBtn.textContent = '⏱️ With Timing';
+                    this.toggleFormatBtn.classList.remove('active');
+                    this.downloadVttBtn.style.display = 'none';
+                }
+            }
+
+            async copyText() {
+                try {
+                    await navigator.clipboard.writeText(this.textOutput.textContent);
+                    
+                    const originalText = this.copyBtn.textContent;
+                    this.copyBtn.textContent = '✅ Copied!';
+                    this.copyBtn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        this.copyBtn.textContent = originalText;
+                        this.copyBtn.classList.remove('copied');
+                    }, 2000);
+                } catch (error) {
+                    this.fallbackCopyText();
+                }
+            }
+
+            fallbackCopyText() {
+                const textArea = document.createElement('textarea');
+                textArea.value = this.textOutput.textContent;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                this.copyBtn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    this.copyBtn.textContent = '📋 Copy Text';
+                }, 2000);
+            }
+
+            async copySummary() {
+                try {
+                    await navigator.clipboard.writeText(this.summaryOutput.textContent);
+                    
+                    const originalText = this.copySummaryBtn.textContent;
+                    this.copySummaryBtn.textContent = '✅ Copied!';
+                    this.copySummaryBtn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        this.copySummaryBtn.textContent = originalText;
+                        this.copySummaryBtn.classList.remove('copied');
+                    }, 2000);
+                } catch (error) {
+                    this.fallbackCopySummary();
+                }
+            }
+
+            fallbackCopySummary() {
+                const textArea = document.createElement('textarea');
+                textArea.value = this.summaryOutput.textContent;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                this.copySummaryBtn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    this.copySummaryBtn.textContent = '📋 Copy Summary';
+                }, 2000);
+            }
+
+            downloadVTT() {
+                if (!this.currentResult) return;
+                
+                const vttContent = this.createVTTFile(this.currentResult);
+                const blob = new Blob([vttContent], { type: 'text/vtt' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${this.currentResult.title || 'transcription'}.vtt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Visual feedback
+                const originalText = this.downloadVttBtn.textContent;
+                this.downloadVttBtn.textContent = '✅ Downloaded!';
+                setTimeout(() => {
+                    this.downloadVttBtn.textContent = originalText;
+                }, 2000);
+            }
+
+            createVTTFile(data) {
+                const lines = data.text_with_timing.split('\n');
+                let vttContent = 'WEBVTT\n\n';
+                let inTimestamp = false;
+                let timestamp = '';
+                let text = '';
+                
+                for (const line of lines) {
+                    if (line.includes('-->')) {
+                        if (text) {
+                            vttContent += `${timestamp}\n${text}\n\n`;
+                        }
+                        timestamp = line.replace(/[\[\]]/g, '');
+                        text = '';
+                        inTimestamp = true;
+                    } else if (line.trim() && !line.includes('#') && !line.includes('**') && !line.includes('---')) {
+                        text += line + ' ';
+                    }
+                }
+                
+                // Add the last entry
+                if (text && timestamp) {
+                    vttContent += `${timestamp}\n${text.trim()}\n\n`;
+                }
+                
+                return vttContent;
+            }
+
+            saveTranscription() {
+                const transcription = {
+                    id: Date.now().toString(),
+                    url: this.videoUrlInput.value,
+                    title: this.videoTitle.textContent,
+                    text: this.currentResult ? this.currentResult.text : this.textOutput.textContent,
+                    language: this.detectedLanguage.textContent,
+                    timestamp: new Date().toISOString(),
+                    preview: (this.currentResult ? this.currentResult.text : this.textOutput.textContent).substring(0, 100) + '...'
+                };
+
+                this.addToStorage(transcription);
+                this.renderTranscriptionList();
+                
+                this.saveBtn.textContent = '✅ Saved!';
+                setTimeout(() => {
+                    this.saveBtn.textContent = '💾 Save';
+                }, 2000);
+            }
+
+            addToStorage(transcription) {
+                const stored = JSON.parse(localStorage.getItem('transcriptions') || '[]');
+                stored.unshift(transcription);
+                
+                if (stored.length > 50) {
+                    stored.splice(50);
+                }
+                
+                localStorage.setItem('transcriptions', JSON.stringify(stored));
+            }
+
+            loadStoredTranscriptions() {
+                this.renderTranscriptionList();
+            }
+
+            renderTranscriptionList() {
+                const stored = JSON.parse(localStorage.getItem('transcriptions') || '[]');
+                
+                if (stored.length === 0) {
+                    this.transcriptionList.innerHTML = '<div class="empty-state">No transcriptions yet</div>';
+                    return;
+                }
+
+                this.transcriptionList.innerHTML = stored.map(item => `
+                    <div class="transcription-item" data-id="${item.id}">
+                        <div class="transcription-title">${this.escapeHtml(item.title)}</div>
+                        <div class="transcription-meta">
+                            <span>${item.language}</span>
+                            <span>${new Date(item.timestamp).toLocaleDateString()}</span>
+                        </div>
+                        <div class="transcription-preview">${this.escapeHtml(item.preview)}</div>
+                    </div>
+                `).join('');
+
+                this.transcriptionList.addEventListener('click', (e) => {
+                    const item = e.target.closest('.transcription-item');
+                    if (item) {
+                        this.loadTranscription(item.dataset.id);
+                    }
+                });
+            }
+
+            loadTranscription(id) {
+                const stored = JSON.parse(localStorage.getItem('transcriptions') || '[]');
+                const transcription = stored.find(item => item.id === id);
+                
+                if (transcription) {
+                    this.videoUrlInput.value = transcription.url;
+                    this.textOutput.textContent = transcription.text;
+                    this.detectedLanguage.textContent = transcription.language;
+                    this.videoTitle.textContent = transcription.title;
+                    this.extractionTime.textContent = new Date(transcription.timestamp).toLocaleString();
+                    
+                    // Reset to clean view and disable toggle (no timing data for stored items)
+                    this.currentResult = null;
+                    this.showingTiming = false;
+                    this.resultTitle.textContent = '📄 Extracted Text';
+                    this.toggleFormatBtn.textContent = '⏱️ With Timing';
+                    this.toggleFormatBtn.classList.remove('active');
+                    this.toggleFormatBtn.disabled = true; // Disable toggle for stored items
+                    this.downloadVttBtn.style.display = 'none';
+                    
+                    this.resultSection.style.display = 'block';
+                    
+                    document.querySelectorAll('.transcription-item').forEach(el => 
+                        el.classList.remove('active')
+                    );
+                    document.querySelector(`[data-id="${id}"]`).classList.add('active');
+                }
+            }
+
+            clearHistory() {
+                if (confirm('Are you sure you want to clear all transcription history?')) {
+                    localStorage.removeItem('transcriptions');
+                    this.renderTranscriptionList();
+                }
+            }
+
+            async checkServerStatus() {
+                this.checkServerBtn.textContent = '...';
+                this.checkServerBtn.disabled = true;
+                
+                try {
+                    const response = await fetch(`${this.backendUrl}/health`, {
+                        method: 'GET',
+                        signal: AbortSignal.timeout(3000)
+                    });
+                    
+                    if (response.ok) {
+                        this.statusIndicator.style.background = '#27ae60';
+                        this.statusText.textContent = 'Connected';
+                        this.statusText.style.color = '#27ae60';
+                    } else {
+                        throw new Error('Server error');
+                    }
+                } catch (error) {
+                    this.statusIndicator.style.background = '#e74c3c';
+                    this.statusText.textContent = 'Disconnected';
+                    this.statusText.style.color = '#e74c3c';
+                }
+                
+                this.checkServerBtn.textContent = 'Check';
+                this.checkServerBtn.disabled = false;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new VideoTextExtractor();
+        });
+    </script>
+</body>
+</html>

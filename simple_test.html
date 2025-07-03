@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Text Extractor - Simple Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 10px 5px; }
+        input { padding: 10px; width: 400px; margin: 10px 0; }
+        .result { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🎬 Video Text Extractor - Debug Version</h1>
+    
+    <div id="server-status" class="status info">Testing server connection...</div>
+    
+    <div>
+        <h3>Test Video Transcription:</h3>
+        <input type="url" id="video-url" placeholder="Enter YouTube URL here" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+        <br>
+        <button onclick="testExtraction()">Extract Text</button>
+        <button onclick="testServerHealth()">Test Server</button>
+    </div>
+    
+    <div id="loading" style="display:none;" class="status info">
+        🔄 Processing video... This may take a minute.
+    </div>
+    
+    <div id="result"></div>
+    
+    <script>
+        const SERVER_URL = 'http://127.0.0.1:8000';
+        
+        async function testServerHealth() {
+            const statusDiv = document.getElementById('server-status');
+            statusDiv.className = 'status info';
+            statusDiv.textContent = 'Testing server...';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/health`);
+                const data = await response.json();
+                
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `✅ Server is healthy! Model loaded: ${data.model_loaded}`;
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ Server connection failed: ${error.message}`;
+                console.error('Server test failed:', error);
+            }
+        }
+        
+        async function testExtraction() {
+            const url = document.getElementById('video-url').value;
+            const loadingDiv = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            
+            if (!url) {
+                alert('Please enter a video URL');
+                return;
+            }
+            
+            loadingDiv.style.display = 'block';
+            resultDiv.innerHTML = '';
+            
+            try {
+                console.log('Testing video URL:', url);
+                
+                // First test the URL
+                const testResponse = await fetch(`${SERVER_URL}/test-extract`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video_url: url })
+                });
+                
+                const testResult = await testResponse.json();
+                console.log('Test result:', testResult);
+                
+                if (testResult.status === 'error') {
+                    throw new Error(`Video test failed: ${testResult.error}`);
+                }
+                
+                resultDiv.innerHTML = `<div class="status success">✅ Video URL is valid: "${testResult.title}"</div>`;
+                
+                // Now try extraction
+                console.log('Starting extraction...');
+                const extractResponse = await fetch(`${SERVER_URL}/extract-text`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video_url: url })
+                });
+                
+                if (!extractResponse.ok) {
+                    const errorText = await extractResponse.text();
+                    throw new Error(`HTTP ${extractResponse.status}: ${errorText}`);
+                }
+                
+                const result = await extractResponse.json();
+                console.log('Extraction result:', result);
+                
+                resultDiv.innerHTML += `
+                    <div class="result">
+                        <h3>📝 Extracted Text:</h3>
+                        <p><strong>Title:</strong> ${result.title}</p>
+                        <p><strong>Language:</strong> ${result.language}</p>
+                        <p><strong>Duration:</strong> ${result.duration}s</p>
+                        <div style="background: white; padding: 15px; border-left: 4px solid #007bff; margin: 10px 0; white-space: pre-wrap; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6;">
+                            ${result.text}
+                        </div>
+                        <button onclick="copyText(\`${result.text.replace(/`/g, '\\`')}\`)">📋 Copy Text</button>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Extraction failed:', error);
+                resultDiv.innerHTML += `<div class="status error">❌ Error: ${error.message}</div>`;
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+        
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Text copied to clipboard!');
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                alert('Copy failed. Please select and copy manually.');
+            });
+        }
+        
+        // Test server on page load
+        window.onload = testServerHealth;
+    </script>
+</body>
+</html>
