@@ -3,190 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Text Extractor</title>
+    <title>Video Text Extractor - Standalone</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f5f7fa;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             color: #333;
-            line-height: 1.6;
         }
-
+        
         .container {
-            display: flex;
-            height: 100vh;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 300px;
-            background-color: #2c3e50;
-            color: white;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            overflow-y: auto;
         }
-
-        .sidebar-header {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #34495e;
-        }
-
-        .sidebar-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .sidebar-header h2 {
-            font-size: 1.4rem;
-            font-weight: 600;
-        }
-
-        .sidebar-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .clear-btn, .restart-btn, .stop-job-btn {
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: background-color 0.2s;
-            color: white;
-            font-weight: 500;
-        }
-
-        .clear-btn {
-            background: #e74c3c;
-        }
-
-        .clear-btn:hover {
-            background: #c0392b;
-        }
-
-        .restart-btn {
-            background: #f39c12;
-        }
-
-        .restart-btn:hover {
-            background: #e67e22;
-        }
-
-        .stop-job-btn {
-            background: #95a5a6;
-        }
-
-        .stop-job-btn:hover {
-            background: #7f8c8d;
-        }
-
-        .stop-job-btn:disabled {
-            background: #bdc3c7;
-            cursor: not-allowed;
-        }
-
-        .transcription-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .transcription-item {
-            background: #34495e;
-            padding: 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border-left: 4px solid #3498db;
-        }
-
-        .transcription-item:hover {
-            background: #3d566e;
-        }
-
-        .transcription-item.active {
-            background: #3498db;
-            border-left-color: #2980b9;
-        }
-
-        .transcription-title {
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .transcription-meta {
-            font-size: 0.75rem;
-            color: #bdc3c7;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .transcription-preview {
-            font-size: 0.8rem;
-            color: #ecf0f1;
-            margin-top: 8px;
-            line-height: 1.4;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-        }
-
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-
+        
         .header {
             text-align: center;
             margin-bottom: 40px;
+            color: white;
         }
-
+        
         .header h1 {
-            font-size: 2.5rem;
-            color: #2c3e50;
+            font-size: 3rem;
             margin-bottom: 10px;
-            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-
+        
         .header p {
-            color: #7f8c8d;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            opacity: 0.9;
         }
-
-        .input-section {
-            background: white;
-            padding: 30px;
+        
+        .server-status {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-
+        
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.connected {
+            background: #27ae60;
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .main-content {
+            background: rgba(255,255,255,0.95);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .server-instructions {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+        
+        .command {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        
         .input-group {
             display: flex;
             gap: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
-
+        
         #video-url {
             flex: 1;
             padding: 15px;
@@ -195,12 +112,12 @@
             font-size: 1rem;
             transition: border-color 0.2s;
         }
-
+        
         #video-url:focus {
             outline: none;
             border-color: #3498db;
         }
-
+        
         .extract-btn {
             background: #3498db;
             color: white;
@@ -210,35 +127,27 @@
             cursor: pointer;
             font-size: 1rem;
             font-weight: 600;
-            transition: background-color 0.2s;
-            white-space: nowrap;
+            transition: all 0.2s;
         }
-
+        
         .extract-btn:hover:not(:disabled) {
             background: #2980b9;
+            transform: translateY(-2px);
         }
-
+        
         .extract-btn:disabled {
             background: #bdc3c7;
             cursor: not-allowed;
+            transform: none;
         }
-
-        .language-info {
-            text-align: center;
-            color: #7f8c8d;
-            font-size: 0.9rem;
-        }
-
-        /* Loading Section */
+        
         .loading-section {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             text-align: center;
-            margin-bottom: 30px;
+            padding: 40px;
+            margin: 30px 0;
+            display: none;
         }
-
+        
         .spinner {
             width: 50px;
             height: 50px;
@@ -248,706 +157,550 @@
             animation: spin 1s linear infinite;
             margin: 0 auto 20px;
         }
-
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        .loading-text {
-            color: #7f8c8d;
-            font-size: 1.1rem;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e0e6ed;
-            border-radius: 4px;
-            margin-top: 15px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #3498db, #2980b9);
-            border-radius: 4px;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        /* Result Section */
+        
         .result-section {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .result-header {
-            padding: 20px 30px;
+            margin-top: 30px;
+            padding: 30px;
             background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
         }
-
-        .result-header h3 {
-            color: #2c3e50;
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-
+        
         .result-actions {
             display: flex;
             gap: 10px;
         }
-
-        .copy-btn, .save-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
+        
         .copy-btn {
             background: #27ae60;
             color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
         }
-
+        
         .copy-btn:hover {
             background: #229954;
         }
-
-        .copy-btn.copied {
-            background: #2ecc71;
+        
+        .toggle-btn {
+            background: #ecf0f1;
+            color: #2c3e50;
+            border: 2px solid #bdc3c7;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 120px;
         }
-
-        .save-btn {
-            background: #f39c12;
+        
+        .toggle-btn:hover {
+            background: #d5dbdb;
+            border-color: #95a5a6;
+            transform: translateY(-2px);
+        }
+        
+        .toggle-btn.active {
+            background: #3498db;
             color: white;
+            border-color: #2980b9;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
         }
-
-        .save-btn:hover {
-            background: #e67e22;
+        
+        .toggle-btn.active:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
         }
-
+        
         .text-output {
-            padding: 30px;
+            background: white;
+            padding: 25px;
+            border-radius: 6px;
             font-size: 1rem;
             line-height: 1.8;
-            color: #2c3e50;
             white-space: pre-wrap;
             word-wrap: break-word;
             min-height: 200px;
-            max-height: 500px;
+            max-height: 600px;
             overflow-y: auto;
+            border: 1px solid #e9ecef;
         }
-
-        .metadata {
-            padding: 15px 30px;
-            background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            color: #6c757d;
+        
+        .demo-mode {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-                height: auto;
-            }
-            
-            .sidebar {
-                width: 100%;
-                height: auto;
-                max-height: 200px;
-            }
-            
-            .input-group {
-                flex-direction: column;
-            }
-            
-            .result-header {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-            
-            .metadata {
-                flex-direction: column;
-                gap: 5px;
-            }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
         }
-
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            color: #7f8c8d;
-            font-style: italic;
+        
+        .feature {
+            background: rgba(255,255,255,0.8);
             padding: 20px;
+            border-radius: 8px;
+            text-align: center;
         }
-
-        /* Success animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
         }
-
-        .result-section {
-            animation: fadeIn 0.5s ease-out;
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .main-content { padding: 20px; }
+            .input-group { flex-direction: column; }
+            .server-status { flex-direction: column; gap: 15px; }
+            .result-header { flex-direction: column; gap: 15px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-title">
-                    <h2>Transcriptions</h2>
-                </div>
-                <div class="sidebar-actions">
-                    <button id="clear-history" class="clear-btn">Clear All</button>
-                    <button id="stop-job" class="stop-job-btn" disabled>Stop Job</button>
-                    <button id="restart-server" class="restart-btn">Restart Server</button>
-                </div>
+        <div class="header">
+            <h1>🎬 Video Text Extractor</h1>
+            <p>AI-powered video transcription with intelligent summaries</p>
+        </div>
+        
+        <div class="server-status">
+            <div class="status-info">
+                <span class="status-dot" id="status-dot"></span>
+                <span><strong>Server Status:</strong> <span id="status-text">Checking...</span></span>
             </div>
-            <div id="transcription-list" class="transcription-list">
-                <!-- Stored transcriptions will appear here -->
-            </div>
+            <button onclick="checkServerStatus()" style="background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Check Server</button>
         </div>
         
         <div class="main-content">
-            <div class="header">
-                <h1>Video Text Extractor</h1>
-                <p>Extract text from video URLs using AI-powered speech recognition</p>
+            <div class="server-instructions">
+                <h3>🚀 Quick Start</h3>
+                <p><strong>To enable video transcription, start the Python server:</strong></p>
+                <div class="command">python3 server.py</div>
             </div>
             
-            <div class="input-section">
-                <div class="input-group">
-                    <input type="url" id="video-url" placeholder="Paste your video URL here (YouTube, etc.)" required>
-                    <button id="extract-btn" class="extract-btn">Extract Text</button>
-                </div>
-                <div class="language-info">
-                    <span id="detected-language">Language will be auto-detected</span>
-                </div>
+            <div class="demo-mode" id="demo-mode" style="display: none;">
+                <strong>📋 Demo Mode Active:</strong> Server not connected. Showing simulated results for demonstration.
             </div>
             
-            <div class="loading-section" id="loading-section" style="display: none;">
+            <div class="input-group">
+                <input type="url" id="video-url" placeholder="Paste your video URL here (YouTube, Vimeo, etc.)" required>
+                <button id="extract-btn" class="extract-btn">Extract Text</button>
+            </div>
+            
+            <div class="loading-section" id="loading-section">
                 <div class="spinner"></div>
-                <div class="loading-text">
-                    <div id="loading-status">Processing video...</div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progress-fill"></div>
-                    </div>
-                </div>
+                <div id="loading-text">Processing video with AI...</div>
             </div>
             
-            <div class="result-section" id="result-section" style="display: none;">
+            <div class="result-section" id="result-section">
                 <div class="result-header">
-                    <h3>Extracted Text</h3>
+                    <h3 id="result-title">📄 Extracted Text</h3>
                     <div class="result-actions">
-                        <button id="copy-btn" class="copy-btn">📋 Copy Text</button>
-                        <button id="save-btn" class="save-btn">💾 Save</button>
+                        <button id="copy-current-btn" class="copy-btn">📋 Copy</button>
+                        <button id="download-srt-btn" class="copy-btn" style="background: #f39c12; display: none;">📥 Download SRT</button>
                     </div>
                 </div>
-                <div class="text-output" id="text-output">
-                    <!-- Extracted text will appear here -->
+                
+                <!-- Toggle Buttons -->
+                <div class="view-toggle" style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap;">
+                    <button id="toggle-transcript" class="toggle-btn active">📄 Transcript</button>
+                    <button id="toggle-srt" class="toggle-btn">⏱️ SRT Timing</button>
+                    <button id="toggle-summary" class="toggle-btn">📝 AI Summary</button>
                 </div>
-                <div class="metadata">
-                    <span id="video-title"></span>
-                    <span id="extraction-time"></span>
-                </div>
+                
+                <div class="text-output" id="unified-output"></div>
             </div>
-            
-            <div class="result-section" id="summary-section" style="display: none;">
-                <div class="result-header">
-                    <h3>📝 AI Summary</h3>
-                    <div class="result-actions">
-                        <button id="copy-summary-btn" class="copy-btn">📋 Copy Summary</button>
-                    </div>
-                </div>
-                <div class="text-output" id="summary-output">
-                    <!-- AI summary will appear here -->
-                </div>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🤖</div>
+                <h4>AI-Powered</h4>
+                <p>Uses Faster-Whisper for accurate transcription</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🧠</div>
+                <h4>Smart Summaries</h4>
+                <p>Llama-4 generates insights and key ideas</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🌍</div>
+                <h4>Multi-Language</h4>
+                <p>Supports 10+ languages with auto-detection</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📺</div>
+                <h4>Wide Support</h4>
+                <p>YouTube, Vimeo, and many more platforms</p>
             </div>
         </div>
     </div>
     
     <script>
-        class VideoTextExtractor {
-            constructor() {
-                this.initializeElements();
-                this.bindEvents();
-                this.loadStoredTranscriptions();
-            }
-
-            initializeElements() {
-                this.videoUrlInput = document.getElementById('video-url');
-                this.extractBtn = document.getElementById('extract-btn');
-                this.loadingSection = document.getElementById('loading-section');
-                this.resultSection = document.getElementById('result-section');
-                this.textOutput = document.getElementById('text-output');
-                this.copyBtn = document.getElementById('copy-btn');
-                this.saveBtn = document.getElementById('save-btn');
-                this.transcriptionList = document.getElementById('transcription-list');
-                this.clearHistoryBtn = document.getElementById('clear-history');
-                this.stopJobBtn = document.getElementById('stop-job');
-                this.restartServerBtn = document.getElementById('restart-server');
-                this.detectedLanguage = document.getElementById('detected-language');
-                this.videoTitle = document.getElementById('video-title');
-                this.extractionTime = document.getElementById('extraction-time');
-                this.loadingStatus = document.getElementById('loading-status');
-                this.progressFill = document.getElementById('progress-fill');
-                this.summarySection = document.getElementById('summary-section');
-                this.summaryOutput = document.getElementById('summary-output');
-                this.copySummaryBtn = document.getElementById('copy-summary-btn');
-                this.currentJobController = null;
-            }
-
-            bindEvents() {
-                this.extractBtn.addEventListener('click', () => this.extractText());
-                this.copyBtn.addEventListener('click', () => this.copyText());
-                this.saveBtn.addEventListener('click', () => this.saveTranscription());
-                this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
-                this.stopJobBtn.addEventListener('click', () => this.stopCurrentJob());
-                this.restartServerBtn.addEventListener('click', () => this.restartServer());
-                this.copySummaryBtn.addEventListener('click', () => this.copySummary());
-                
-                this.videoUrlInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        this.extractText();
-                    }
+        let serverConnected = false;
+        const backendUrl = 'http://localhost:8000';
+        let currentData = null;
+        let currentView = 'transcript';
+        
+        async function checkServerStatus() {
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const demoMode = document.getElementById('demo-mode');
+            
+            statusText.textContent = 'Checking...';
+            
+            try {
+                const response = await fetch(`${backendUrl}/health`, { 
+                    method: 'GET',
+                    signal: AbortSignal.timeout(3000)
                 });
-
-                this.videoUrlInput.addEventListener('input', () => {
-                    this.validateUrl();
-                });
-            }
-
-            validateUrl() {
-                const url = this.videoUrlInput.value.trim();
-                const isValid = this.isValidVideoUrl(url);
-                this.extractBtn.disabled = !isValid || !url;
                 
-                if (url && !isValid) {
-                    this.videoUrlInput.style.borderColor = '#e74c3c';
+                if (response.ok) {
+                    serverConnected = true;
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'Connected';
+                    statusText.style.color = '#27ae60';
+                    demoMode.style.display = 'none';
                 } else {
-                    this.videoUrlInput.style.borderColor = '#e0e6ed';
+                    throw new Error('Server error');
                 }
-            }
-
-            isValidVideoUrl(url) {
-                try {
-                    const urlObj = new URL(url);
-                    const validDomains = [
-                        'youtube.com', 'youtu.be', 'vimeo.com', 'dailymotion.com',
-                        'twitch.tv', 'facebook.com', 'instagram.com', 'tiktok.com'
-                    ];
-                    return validDomains.some(domain => 
-                        urlObj.hostname.includes(domain) || urlObj.hostname.endsWith(domain)
-                    );
-                } catch {
-                    return false;
-                }
-            }
-
-            async extractText() {
-                const url = this.videoUrlInput.value.trim();
-                if (!url || !this.isValidVideoUrl(url)) {
-                    alert('Please enter a valid video URL');
-                    return;
-                }
-
-                this.showLoading();
-                this.extractBtn.disabled = true;
-                this.stopJobBtn.disabled = false;
-                this.currentJobController = new AbortController();
-
-                try {
-                    const response = await this.callBackendAPI(url);
-                    this.displayResult(response);
-                } catch (error) {
-                    if (error.name === 'AbortError') {
-                        this.handleJobCancellation();
-                    } else {
-                        this.handleError(error);
-                    }
-                } finally {
-                    this.hideLoading();
-                    this.extractBtn.disabled = false;
-                    this.stopJobBtn.disabled = true;
-                    this.currentJobController = null;
-                }
-            }
-
-            async callBackendAPI(url) {
-                const response = await fetch('http://localhost:8000/extract-text', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ video_url: url }),
-                    signal: this.currentJobController ? this.currentJobController.signal : undefined
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                return await response.json();
-            }
-
-            showLoading() {
-                this.loadingSection.style.display = 'block';
-                this.resultSection.style.display = 'none';
-                this.simulateProgress();
-            }
-
-            hideLoading() {
-                this.loadingSection.style.display = 'none';
-                this.progressFill.style.width = '0%';
-            }
-
-            simulateProgress() {
-                let progress = 0;
-                const statuses = [
-                    'Downloading video...',
-                    'Extracting audio...',
-                    'Processing with faster-whisper...',
-                    'Detecting language...',
-                    'Generating transcription...',
-                    'Finalizing...'
-                ];
-                
-                const interval = setInterval(() => {
-                    progress += Math.random() * 15;
-                    if (progress > 90) progress = 90;
-                    
-                    this.progressFill.style.width = `${progress}%`;
-                    
-                    const statusIndex = Math.floor((progress / 100) * statuses.length);
-                    if (statusIndex < statuses.length) {
-                        this.loadingStatus.textContent = statuses[statusIndex];
-                    }
-                }, 800);
-
-                setTimeout(() => {
-                    clearInterval(interval);
-                    this.progressFill.style.width = '100%';
-                }, 10000);
-            }
-
-            displayResult(data) {
-                this.textOutput.textContent = data.text || 'No text could be extracted from this video.';
-                this.detectedLanguage.textContent = `Detected language: ${data.language || 'Unknown'}`;
-                this.videoTitle.textContent = data.title || 'Unknown Title';
-                this.extractionTime.textContent = new Date().toLocaleString();
-                
-                // Display summary if available
-                if (data.summary) {
-                    this.summaryOutput.textContent = data.summary;
-                    this.summarySection.style.display = 'block';
-                } else {
-                    this.summarySection.style.display = 'none';
-                }
-                
-                this.resultSection.style.display = 'block';
-                this.resultSection.scrollIntoView({ behavior: 'smooth' });
-                
-                // If summary is available, scroll to show it after a delay
-                if (data.summary) {
-                    setTimeout(() => {
-                        this.summarySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }, 1000);
-                }
-            }
-
-            async copyText() {
-                try {
-                    await navigator.clipboard.writeText(this.textOutput.textContent);
-                    
-                    const originalText = this.copyBtn.textContent;
-                    this.copyBtn.textContent = '✅ Copied!';
-                    this.copyBtn.classList.add('copied');
-                    
-                    setTimeout(() => {
-                        this.copyBtn.textContent = originalText;
-                        this.copyBtn.classList.remove('copied');
-                    }, 2000);
-                } catch (error) {
-                    this.fallbackCopyText();
-                }
-            }
-
-            fallbackCopyText() {
-                const textArea = document.createElement('textarea');
-                textArea.value = this.textOutput.textContent;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                
-                this.copyBtn.textContent = '✅ Copied!';
-                setTimeout(() => {
-                    this.copyBtn.textContent = '📋 Copy Text';
-                }, 2000);
-            }
-
-            saveTranscription() {
-                const transcription = {
-                    id: Date.now().toString(),
-                    url: this.videoUrlInput.value,
-                    title: this.videoTitle.textContent,
-                    text: this.textOutput.textContent,
-                    language: this.detectedLanguage.textContent,
-                    timestamp: new Date().toISOString(),
-                    preview: this.textOutput.textContent.substring(0, 100) + '...'
-                };
-
-                this.addToStorage(transcription);
-                this.renderTranscriptionList();
-                
-                this.saveBtn.textContent = '✅ Saved!';
-                setTimeout(() => {
-                    this.saveBtn.textContent = '💾 Save';
-                }, 2000);
-            }
-
-            addToStorage(transcription) {
-                const stored = JSON.parse(localStorage.getItem('transcriptions') || '[]');
-                stored.unshift(transcription);
-                
-                if (stored.length > 50) {
-                    stored.splice(50);
-                }
-                
-                localStorage.setItem('transcriptions', JSON.stringify(stored));
-            }
-
-            loadStoredTranscriptions() {
-                this.renderTranscriptionList();
-            }
-
-            renderTranscriptionList() {
-                const stored = JSON.parse(localStorage.getItem('transcriptions') || '[]');
-                
-                if (stored.length === 0) {
-                    this.transcriptionList.innerHTML = '<div class="empty-state">No transcriptions yet</div>';
-                    return;
-                }
-
-                this.transcriptionList.innerHTML = stored.map(item => `
-                    <div class="transcription-item" data-id="${item.id}">
-                        <div class="transcription-title">${this.escapeHtml(item.title)}</div>
-                        <div class="transcription-meta">
-                            <span>${item.language}</span>
-                            <span>${new Date(item.timestamp).toLocaleDateString()}</span>
-                        </div>
-                        <div class="transcription-preview">${this.escapeHtml(item.preview)}</div>
-                    </div>
-                `).join('');
-
-                this.transcriptionList.addEventListener('click', (e) => {
-                    const item = e.target.closest('.transcription-item');
-                    if (item) {
-                        this.loadTranscription(item.dataset.id);
-                    }
-                });
-            }
-
-            loadTranscription(id) {
-                const stored = JSON.parse(localStorage.getItem('transcriptions') || '[]');
-                const transcription = stored.find(item => item.id === id);
-                
-                if (transcription) {
-                    this.videoUrlInput.value = transcription.url;
-                    this.textOutput.textContent = transcription.text;
-                    this.detectedLanguage.textContent = transcription.language;
-                    this.videoTitle.textContent = transcription.title;
-                    this.extractionTime.textContent = new Date(transcription.timestamp).toLocaleString();
-                    
-                    this.resultSection.style.display = 'block';
-                    
-                    document.querySelectorAll('.transcription-item').forEach(el => 
-                        el.classList.remove('active')
-                    );
-                    document.querySelector(`[data-id="${id}"]`).classList.add('active');
-                }
-            }
-
-            clearHistory() {
-                if (confirm('Are you sure you want to clear all transcription history?')) {
-                    localStorage.removeItem('transcriptions');
-                    this.renderTranscriptionList();
-                }
-            }
-
-            stopCurrentJob() {
-                if (this.currentJobController) {
-                    this.currentJobController.abort();
-                    this.stopJobBtn.textContent = '✅ Stopped';
-                    setTimeout(() => {
-                        this.stopJobBtn.textContent = 'Stop Job';
-                    }, 2000);
-                }
-            }
-
-            handleJobCancellation() {
-                this.textOutput.textContent = 'Job was cancelled by user';
-                this.detectedLanguage.textContent = 'Job cancelled';
-                this.videoTitle.textContent = 'Cancelled';
-                this.extractionTime.textContent = new Date().toLocaleString();
-                this.resultSection.style.display = 'block';
-            }
-
-            async restartServer() {
-                if (confirm('This will restart the server. Continue?')) {
-                    this.restartServerBtn.disabled = true;
-                    this.restartServerBtn.textContent = 'Restarting...';
-                    
-                    try {
-                        // Set a timeout for the request since server will shutdown
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 3000);
-                        
-                        const response = await fetch('http://localhost:8000/restart', {
-                            method: 'POST',
-                            signal: controller.signal
-                        });
-                        
-                        clearTimeout(timeoutId);
-                        
-                        // Server should shutdown, so any response is success
-                        this.restartServerBtn.textContent = 'Restarting...';
-                        await this.waitForServerRestart();
-                        
-                    } catch (error) {
-                        // If fetch fails due to timeout or connection error, it likely means server shut down
-                        if (error.name === 'AbortError' || error.message.includes('fetch')) {
-                            this.restartServerBtn.textContent = 'Restarting...';
-                            await this.waitForServerRestart();
-                        } else {
-                            alert('Failed to restart server. Please check if you started the server with the restart wrapper script.');
-                            this.restartServerBtn.textContent = 'Restart Server';
-                            this.restartServerBtn.disabled = false;
-                        }
-                    }
-                }
-            }
-
-            async waitForServerRestart() {
-                const maxAttempts = 15;
-                let attempts = 0;
-                
-                const checkServer = async () => {
-                    try {
-                        const response = await fetch('http://localhost:8000/health', {
-                            method: 'GET',
-                            signal: AbortSignal.timeout(2000)
-                        });
-                        
-                        if (response.ok) {
-                            this.restartServerBtn.textContent = '✅ Restarted';
-                            setTimeout(() => {
-                                this.restartServerBtn.textContent = 'Restart Server';
-                                this.restartServerBtn.disabled = false;
-                            }, 2000);
-                            return true;
-                        }
-                    } catch (error) {
-                        // Server not ready yet
-                    }
-                    return false;
-                };
-                
-                while (attempts < maxAttempts) {
-                    attempts++;
-                    this.restartServerBtn.textContent = `Restarting... (${attempts}/${maxAttempts})`;
-                    
-                    if (await checkServer()) {
-                        return;
-                    }
-                    
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                }
-                
-                // If we get here, server didn't come back up
-                this.restartServerBtn.textContent = 'Restart Failed';
-                alert('Server restart timed out. Please check your terminal and restart manually if needed.');
-                setTimeout(() => {
-                    this.restartServerBtn.textContent = 'Restart Server';
-                    this.restartServerBtn.disabled = false;
-                }, 3000);
-            }
-
-            handleError(error) {
-                console.error('Error extracting text:', error);
-                
-                let errorMessage = 'Failed to extract text from video. ';
-                if (error.message.includes('404')) {
-                    errorMessage += 'Video not found or not accessible.';
-                } else if (error.message.includes('network')) {
-                    errorMessage += 'Network error. Please check your connection.';
-                } else {
-                    errorMessage += 'Please try again or check if the video URL is valid.';
-                }
-                
-                this.textOutput.textContent = errorMessage;
-                this.detectedLanguage.textContent = 'Error occurred';
-                this.videoTitle.textContent = 'Error';
-                this.extractionTime.textContent = new Date().toLocaleString();
-                
-                this.resultSection.style.display = 'block';
-            }
-
-            async copySummary() {
-                try {
-                    await navigator.clipboard.writeText(this.summaryOutput.textContent);
-                    
-                    const originalText = this.copySummaryBtn.textContent;
-                    this.copySummaryBtn.textContent = '✅ Copied!';
-                    this.copySummaryBtn.classList.add('copied');
-                    
-                    setTimeout(() => {
-                        this.copySummaryBtn.textContent = originalText;
-                        this.copySummaryBtn.classList.remove('copied');
-                    }, 2000);
-                } catch (error) {
-                    this.fallbackCopySummary();
-                }
-            }
-
-            fallbackCopySummary() {
-                const textArea = document.createElement('textarea');
-                textArea.value = this.summaryOutput.textContent;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                
-                this.copySummaryBtn.textContent = '✅ Copied!';
-                setTimeout(() => {
-                    this.copySummaryBtn.textContent = '📋 Copy Summary';
-                }, 2000);
-            }
-
-            escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
+            } catch (error) {
+                serverConnected = false;
+                statusDot.classList.remove('connected');
+                statusText.textContent = 'Disconnected';
+                statusText.style.color = '#e74c3c';
+                demoMode.style.display = 'block';
             }
         }
+        
+        async function extractText() {
+            const url = document.getElementById('video-url').value.trim();
+            if (!url) {
+                alert('Please enter a video URL');
+                return;
+            }
+            
+            const loadingSection = document.getElementById('loading-section');
+            const resultSection = document.getElementById('result-section');
+            const extractBtn = document.getElementById('extract-btn');
+            
+            loadingSection.style.display = 'block';
+            resultSection.style.display = 'none';
+            extractBtn.disabled = true;
+            
+            try {
+                if (serverConnected) {
+                    // Try real backend
+                    const response = await fetch(`${backendUrl}/extract-text`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ video_url: url }),
+                        signal: AbortSignal.timeout(300000) // 5 minutes
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        displayResult(data, false);
+                    } else {
+                        throw new Error('Server error');
+                    }
+                } else {
+                    // Demo mode
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    displayDemoResult(url);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                if (!serverConnected) {
+                    displayDemoResult(url);
+                } else {
+                    alert('Failed to extract text. Please check the video URL and try again.');
+                }
+            } finally {
+                loadingSection.style.display = 'none';
+                extractBtn.disabled = false;
+            }
+        }
+        
+        function displayResult(data, isDemo = false) {
+            currentData = data;
+            currentView = 'transcript';
+            
+            const resultSection = document.getElementById('result-section');
+            resultSection.style.display = 'block';
+            
+            // Show transcript view by default
+            switchView('transcript');
+            
+            // Enable toggle buttons based on available data
+            document.getElementById('toggle-transcript').disabled = false;
+            document.getElementById('toggle-srt').disabled = !data.text_with_timing;
+            document.getElementById('toggle-summary').disabled = !data.summary;
+            
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function switchView(view) {
+            if (!currentData) return;
+            
+            currentView = view;
+            const unifiedOutput = document.getElementById('unified-output');
+            const resultTitle = document.getElementById('result-title');
+            const downloadBtn = document.getElementById('download-vtt-btn');
+            
+            // Update toggle button states
+            document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`toggle-${view}`).classList.add('active');
+            
+            // Update content based on view
+            switch(view) {
+                case 'transcript':
+                    unifiedOutput.textContent = currentData.text || 'No text could be extracted from this video.';
+                    unifiedOutput.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    unifiedOutput.style.fontSize = '1rem';
+                    resultTitle.textContent = '📄 Extracted Text';
+                    downloadBtn.style.display = 'none';
+                    break;
+                    
+                case 'srt':
+                    unifiedOutput.textContent = currentData.text_with_timing || 'SRT timing data not available.';
+                    unifiedOutput.style.fontFamily = '"Monaco", "Consolas", monospace';
+                    unifiedOutput.style.fontSize = '0.9rem';
+                    resultTitle.textContent = '⏱️ SRT Transcription (with Timing)';
+                    downloadBtn.style.display = currentData.text_with_timing ? 'inline-block' : 'none';
+                    break;
+                    
+                case 'summary':
+                    unifiedOutput.textContent = currentData.summary || 'AI summary not available.';
+                    unifiedOutput.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    unifiedOutput.style.fontSize = '1rem';
+                    resultTitle.textContent = '📝 AI Summary';
+                    downloadBtn.style.display = 'none';
+                    break;
+            }
+        }
+        
+        function displayDemoResult(url) {
+            const demoData = {
+                text: `# Demo Video Transcription
 
+**Source:** ${url}
+**Language:** English (Demo)
+**Status:** Demonstration Mode
+
+---
+
+Welcome to the Video Text Extractor demonstration! This is a simulated transcription to show you how the system works when connected to the backend server.
+
+In real mode, this application uses Faster-Whisper for accurate speech recognition and can process videos from YouTube, Vimeo, and many other platforms. The transcription includes automatic language detection, smart formatting with proper paragraphs, and source attribution.
+
+The system supports multiple languages including English, Spanish, French, German, Italian, Portuguese, Russian, Japanese, Korean, and Chinese. Processing time varies based on video length, typically taking 1-3 minutes for a 10-minute video.
+
+Key features include:
+• AI-powered transcription with OpenAI Whisper
+• Automatic language detection  
+• Smart text formatting and paragraphs
+• VTT-style timing information for subtitles
+• AI-generated summaries with insights
+• Copy and save functionality
+• Responsive web interface
+
+To enable real video processing, please start the Python server by running 'python3 server.py' in your terminal, then refresh this page and check the server status indicator.`,
+                
+                text_with_timing: `1
+00:00:00,000 --> 00:00:15,000
+Welcome to the Video Text Extractor demonstration! This is a simulated transcription to show you how the system works.
+
+2
+00:00:15,000 --> 00:00:30,000
+In real mode, this application uses Faster-Whisper for accurate speech recognition and can process videos from YouTube, Vimeo, and many other platforms.
+
+3
+00:00:30,000 --> 00:00:45,000
+The transcription includes automatic language detection, smart formatting with proper paragraphs, and source attribution.
+
+4
+00:00:45,000 --> 00:01:00,000
+The system supports multiple languages including English, Spanish, French, German, Italian, Portuguese, Russian, Japanese, Korean, and Chinese.
+
+5
+00:01:00,000 --> 00:01:15,000
+Processing time varies based on video length, typically taking 1-3 minutes for a 10-minute video.
+
+6
+00:01:15,000 --> 00:01:30,000
+Key features include AI-powered transcription with Faster-Whisper and automatic language detection.
+
+7
+00:01:30,000 --> 00:01:45,000
+Smart text formatting and paragraphs make the output readable and professional.
+
+8
+00:01:45,000 --> 00:02:00,000
+SRT-style timing information enables subtitle creation for video players.
+
+9
+00:02:00,000 --> 00:02:15,000
+AI-generated summaries provide insights and key takeaways from the content.
+
+10
+00:02:15,000 --> 00:02:30,000
+Copy and save functionality makes it easy to use transcriptions in other applications.
+
+11
+00:02:30,000 --> 00:02:45,000
+The responsive web interface works perfectly on desktop and mobile devices.
+
+12
+00:02:45,000 --> 00:03:00,000
+Local processing ensures privacy while maintaining high transcription quality.
+
+13
+00:03:00,000 --> 00:03:15,000
+Demo mode allows users to understand capabilities before setting up the full system.
+
+14
+00:03:15,000 --> 00:03:30,000
+To enable real video processing, please start the Python server.
+
+15
+00:03:30,000 --> 00:03:45,000
+Thank you for trying the Video Text Extractor demonstration!`,
+                
+                summary: `*SUMMARY
+Demo showcasing Video Text Extractor's AI transcription capabilities with Whisper and intelligent summarization features.
+
+*INSIGHTS  
+• AI-powered transcription democratizes access to video content, making information more accessible globally
+• Automatic language detection breaks down barriers between different linguistic communities and cultures
+• Local processing ensures privacy while providing enterprise-grade transcription capabilities without cloud dependencies
+• Integration of timing information enables subtitle creation, enhancing accessibility for hearing-impaired users
+• Smart formatting transforms raw speech into readable text, preserving meaning while improving comprehension
+
+*IDEAS
+• Multi-language support enables global content creators to reach broader audiences effectively
+• VTT-style timing allows seamless integration with video players and accessibility tools
+• Local processing addresses privacy concerns while maintaining high-quality transcription accuracy
+• Responsive design ensures accessibility across devices, from mobile phones to desktop computers
+• AI summarization extracts key insights, saving time for content consumers and researchers
+• Copy functionality enables easy integration with other tools and workflows
+• Demo mode allows users to understand capabilities before committing to full setup
+
+🎬 Revolutionary AI Video Transcription is Here! 🚀
+
+As someone passionate about accessible technology, I'm excited to share this incredible Video Text Extractor tool! 
+
+This isn't just another transcription service - it's a complete AI-powered solution that combines OpenAI Whisper's speech recognition with intelligent summarization. What makes it special? Everything runs locally on your machine, ensuring complete privacy while delivering professional-grade results.
+
+The system supports 10+ languages with automatic detection, creates subtitle-ready timing information, and even generates insightful summaries. Whether you're a content creator, researcher, student, or just someone who wants to make videos more accessible, this tool is a game-changer.
+
+The best part? It's completely free and open-source! No cloud dependencies, no subscription fees, no data collection. Just powerful AI working for you, on your terms. 🙏✨`
+            };
+            
+            displayResult(demoData, true);
+        }
+        
+        async function copyCurrentView() {
+            const unifiedOutput = document.getElementById('unified-output');
+            const button = document.getElementById('copy-current-btn');
+            
+            try {
+                await navigator.clipboard.writeText(unifiedOutput.textContent);
+                const originalText = button.textContent;
+                button.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            } catch (error) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = unifiedOutput.textContent;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                button.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    button.textContent = '📋 Copy';
+                }, 2000);
+            }
+        }
+        
+        function downloadSRT() {
+            if (!currentData || !currentData.text_with_timing) {
+                alert('No SRT content to download');
+                return;
+            }
+            
+            // Use the already properly formatted SRT content
+            const srtContent = currentData.text_with_timing;
+            
+            const blob = new Blob([srtContent], { type: 'application/x-subrip' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'transcription.srt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // Visual feedback
+            const button = document.getElementById('download-srt-btn');
+            const originalText = button.textContent;
+            button.textContent = '✅ Downloaded!';
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 2000);
+        }
+        
+        // Event listeners
         document.addEventListener('DOMContentLoaded', () => {
-            new VideoTextExtractor();
+            checkServerStatus();
+            
+            document.getElementById('extract-btn').addEventListener('click', extractText);
+            document.getElementById('copy-current-btn').addEventListener('click', copyCurrentView);
+            document.getElementById('download-srt-btn').addEventListener('click', downloadSRT);
+            
+            // Toggle button listeners
+            document.getElementById('toggle-transcript').addEventListener('click', () => switchView('transcript'));
+            document.getElementById('toggle-srt').addEventListener('click', () => switchView('srt'));
+            document.getElementById('toggle-summary').addEventListener('click', () => switchView('summary'));
+            
+            document.getElementById('video-url').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') extractText();
+            });
+            
+            // Check server status every 30 seconds
+            setInterval(checkServerStatus, 30000);
         });
     </script>
 </body>

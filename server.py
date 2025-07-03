@@ -17,7 +17,7 @@ def check_dependencies():
     required_packages = {
         'fastapi': 'fastapi',
         'uvicorn': 'uvicorn', 
-        'whisper': 'openai-whisper',
+        'faster_whisper': 'faster-whisper',
         'yt_dlp': 'yt-dlp',
         'requests': 'requests'
     }
@@ -54,7 +54,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import yt_dlp
-import whisper
+from faster_whisper import WhisperModel
 import requests
 import json
 import re
@@ -89,10 +89,10 @@ model = None
 def load_whisper_model():
     global model
     if model is None:
-        logger.info("Loading Whisper model (small)...")
+        logger.info("Loading Faster-Whisper model (small)...")
         try:
-            model = whisper.load_model("small")
-            logger.info("Model loaded successfully")
+            model = WhisperModel("small", device="cpu", compute_type="int8")
+            logger.info("Faster-Whisper model loaded successfully")
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             raise
@@ -152,9 +152,14 @@ def transcribe_audio(audio_path: str) -> tuple[str, str]:
     model = load_whisper_model()
     
     try:
-        result = model.transcribe(audio_path, language=None)
-        transcription = result["text"]
-        detected_language = result["language"]
+        segments, info = model.transcribe(audio_path, language=None)
+        
+        # Combine all segments into full transcription
+        transcription = ""
+        for segment in segments:
+            transcription += segment.text + " "
+        
+        detected_language = info.language
         
         language_names = {
             'en': 'English', 'es': 'Spanish', 'fr': 'French', 'de': 'German',
@@ -216,50 +221,78 @@ def format_transcription_clean(raw_text: str, title: str, video_url: str, langua
     return formatted_output
 
 def format_transcription_with_timing(raw_text: str, title: str, video_url: str, language: str, duration: float) -> str:
+    """Generate standard SRT format for direct use in video programs - PURE SRT ONLY"""
+    logger.info(f"DEBUG: Received raw_text: '{raw_text[:200]}...'")
+    
     if not raw_text.strip():
-        return "No speech detected in this video."
+        return "1\n00:00:00,000 --> 00:00:05,000\nNo speech detected in this video."
     
-    # Similar to clean version but with timing
+    # Clean ONLY the pure spoken text from Whisper - remove any headers/metadata that might be added
     text = raw_text.strip()
+    
+    # Remove any potential headers or metadata (in case they got mixed in)
+    lines = text.split('\n')
+    clean_lines = []
+    for line in lines:
+        line = line.strip()
+        # Skip lines that look like headers or metadata
+        if (not line.startswith('#') and 
+            not line.startswith('**') and 
+            not 'Source:' in line and 
+            not 'Language:' in line and 
+            not 'Duration:' in line and 
+            not line.startswith('---') and
+            line):
+            clean_lines.append(line)
+    
+    # Join the clean text
+    text = ' '.join(clean_lines).strip()
+    
+    logger.info(f"DEBUG: Cleaned text: '{text[:200]}...'")
+    
+    if not text:
+        return "1\n00:00:00,000 --> 00:00:05,000\nNo valid text found."
+    
+    # Split into sentences for timing - use shorter segments for better readability
     sentences = re.split(r'[.!?]+', text)
-    sentences = [s.strip() for s in sentences if s.strip()]
+    sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 3]
     
-    clean_title = title.replace('[', '').replace(']', '').strip()
-    if len(clean_title) > 80:
-        clean_title = clean_title[:77] + "..."
+    if not sentences:
+        # If no sentences found, use the whole text as one subtitle
+        sentences = [text]
     
+    logger.info(f"DEBUG: Found {len(sentences)} sentences")
+    
+    # Calculate timing
     total_sentences = len(sentences)
-    if total_sentences == 0:
-        return text
-    
     time_per_sentence = duration / total_sentences if duration > 0 else 5
     
-    def format_time(seconds):
-        minutes = int(seconds // 60)
-        secs = int(seconds % 60)
-        return f"{minutes:02d}:{secs:02d}"
+    def format_srt_time(seconds):
+        """Format time for SRT: HH:MM:SS,mmm"""
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = seconds % 60
+        return f"{hours:02d}:{minutes:02d}:{secs:06.3f}".replace('.', ',')
     
-    formatted_output = f"""# {clean_title}
-
-**Source:** {video_url}
-**Duration:** {format_time(duration)}
-**Language:** {language}
-
----
-
-"""
+    # Generate SRT content with proper numbering
+    srt_content = ""
     
     current_time = 0
-    for i, sentence in enumerate(sentences):
+    for i, sentence in enumerate(sentences, 1):
         start_time = current_time
         end_time = current_time + time_per_sentence
         
-        formatted_output += f"[{format_time(start_time)} --> {format_time(end_time)}]\n"
-        formatted_output += f"{sentence.strip()}.\n\n"
+        # Standard SRT format: number, timing, text, blank line
+        srt_content += f"{i}\n"
+        srt_content += f"{format_srt_time(start_time)} --> {format_srt_time(end_time)}\n"
+        srt_content += f"{sentence.strip()}\n\n"
         
         current_time = end_time
     
-    return formatted_output
+    final_srt = srt_content.rstrip()
+    logger.info(f"DEBUG: Final SRT preview: '{final_srt[:300]}...'")
+    
+    return final_srt
 
 def generate_summary(transcript: str, title: str) -> str:
     try:
@@ -362,6 +395,10 @@ async def extract_text(request: VideoRequest):
         timing_transcription = format_transcription_with_timing(
             raw_transcription, title, request.video_url, language, duration or 0
         )
+        
+        # Debug: check what we're actually generating
+        logger.info(f"Raw Whisper text: {raw_transcription[:100]}...")
+        logger.info(f"SRT content preview: {timing_transcription[:200]}...")
         
         # Generate summary
         logger.info("Generating summary...")
