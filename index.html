@@ -466,6 +466,18 @@
                     <span id="extraction-time"></span>
                 </div>
             </div>
+            
+            <div class="result-section" id="summary-section" style="display: none;">
+                <div class="result-header">
+                    <h3>📝 AI Summary</h3>
+                    <div class="result-actions">
+                        <button id="copy-summary-btn" class="copy-btn">📋 Copy Summary</button>
+                    </div>
+                </div>
+                <div class="text-output" id="summary-output">
+                    <!-- AI summary will appear here -->
+                </div>
+            </div>
         </div>
     </div>
     
@@ -494,6 +506,9 @@
                 this.extractionTime = document.getElementById('extraction-time');
                 this.loadingStatus = document.getElementById('loading-status');
                 this.progressFill = document.getElementById('progress-fill');
+                this.summarySection = document.getElementById('summary-section');
+                this.summaryOutput = document.getElementById('summary-output');
+                this.copySummaryBtn = document.getElementById('copy-summary-btn');
                 this.currentJobController = null;
             }
 
@@ -504,6 +519,7 @@
                 this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
                 this.stopJobBtn.addEventListener('click', () => this.stopCurrentJob());
                 this.restartServerBtn.addEventListener('click', () => this.restartServer());
+                this.copySummaryBtn.addEventListener('click', () => this.copySummary());
                 
                 this.videoUrlInput.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
@@ -635,8 +651,23 @@
                 this.videoTitle.textContent = data.title || 'Unknown Title';
                 this.extractionTime.textContent = new Date().toLocaleString();
                 
+                // Display summary if available
+                if (data.summary) {
+                    this.summaryOutput.textContent = data.summary;
+                    this.summarySection.style.display = 'block';
+                } else {
+                    this.summarySection.style.display = 'none';
+                }
+                
                 this.resultSection.style.display = 'block';
                 this.resultSection.scrollIntoView({ behavior: 'smooth' });
+                
+                // If summary is available, scroll to show it after a delay
+                if (data.summary) {
+                    setTimeout(() => {
+                        this.summarySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 1000);
+                }
             }
 
             async copyText() {
@@ -875,6 +906,37 @@
                 this.extractionTime.textContent = new Date().toLocaleString();
                 
                 this.resultSection.style.display = 'block';
+            }
+
+            async copySummary() {
+                try {
+                    await navigator.clipboard.writeText(this.summaryOutput.textContent);
+                    
+                    const originalText = this.copySummaryBtn.textContent;
+                    this.copySummaryBtn.textContent = '✅ Copied!';
+                    this.copySummaryBtn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        this.copySummaryBtn.textContent = originalText;
+                        this.copySummaryBtn.classList.remove('copied');
+                    }, 2000);
+                } catch (error) {
+                    this.fallbackCopySummary();
+                }
+            }
+
+            fallbackCopySummary() {
+                const textArea = document.createElement('textarea');
+                textArea.value = this.summaryOutput.textContent;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                this.copySummaryBtn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    this.copySummaryBtn.textContent = '📋 Copy Summary';
+                }, 2000);
             }
 
             escapeHtml(text) {

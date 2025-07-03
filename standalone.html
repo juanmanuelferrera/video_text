@@ -857,6 +857,7 @@ ${paragraphs.join('\n\n')}`;
             }
 
             displayResult(data) {
+                console.log('Display result data:', data); // Debug log
                 this.currentResult = data;
                 this.showingTiming = false;
                 
@@ -867,11 +868,14 @@ ${paragraphs.join('\n\n')}`;
                 this.extractionTime.textContent = new Date().toLocaleString();
                 
                 // Display summary if available
+                console.log('Summary data:', data.summary); // Debug log
                 if (data.summary) {
                     this.summaryOutput.textContent = data.summary;
                     this.summarySection.style.display = 'block';
+                    console.log('Summary section shown'); // Debug log
                 } else {
                     this.summarySection.style.display = 'none';
+                    console.log('No summary data'); // Debug log
                 }
                 
                 // Reset UI to clean version
@@ -882,7 +886,16 @@ ${paragraphs.join('\n\n')}`;
                 this.downloadVttBtn.style.display = 'none';
                 
                 this.resultSection.style.display = 'block';
+                
+                // Scroll to show both sections
                 this.resultSection.scrollIntoView({ behavior: 'smooth' });
+                
+                // If summary is available, scroll to show it after a delay
+                if (data.summary) {
+                    setTimeout(() => {
+                        this.summarySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 1000);
+                }
             }
 
             toggleFormat() {
